@@ -1,0 +1,113 @@
+syntax = "proto3";
+package memory.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Memory Entity
+message Memory{
+    string id = 1;
+    string tenant_id = 2;
+    string user_id = 3;
+    string source = 4; // e.g. claude, gemini. chatgpt
+    string context_id = 5; // conversation / buffer / import
+    MemoryType type = 6;
+    string content = 7;
+    string content_hash = 8;
+    repeated float embedding = 9;
+    float importance = 10;
+    string embedding_model = 11; // later if switch different embedding model.
+    google.protobuf.Struct metadata = 12;
+    google.protobuf.Timestamp created_at = 13;
+    google.protobuf.Timestamp last_accessed_at = 14;
+
+}
+
+
+enum MemoryType{
+    MEMORY_TYPE_UNSPECIFIED = 0;
+    MEMORY_TYPE_FACT = 1;
+    MEMORY_TYPE_PREFERENCE = 2;
+    MEMORY_TYPE_EXPERIENCE = 3;
+    MEMORY_TYPE_SKILL = 4;
+    MEMORY_TYPE_RELATIONSHIP = 5;
+}
+
+
+// =======================================================
+// Knowledge Graph
+
+message Edge {
+    string id = 1;
+    string tenant_id = 2;
+    string source_memory_id = 3;
+    string target_memory_id = 4;
+    EdgeType type = 5;
+    float weight = 6;
+    google.protobuf.Struct metadata = 7;
+}
+
+enum EdgeType{
+    EDGE_TYPE_UNSPECIFIED = 0;
+    EDGE_TYPE_RELATED_TO = 1;
+    EDGE_TYPE_CONTRADICTS = 2;
+    EDGE_TYPE_UPDATES = 3;
+}
+
+// =======================================================
+
+// Buffer For Batch Ingestion
+message Buffer{
+    string id = 1;
+    string tenant_id = 2;
+    string user_id = 3;
+    string source = 4;
+    repeated BufferEntry entries = 5;
+    int32 token_count = 6;
+    google.protobuf.Timestamp flush_at = 7;
+}
+
+
+message BufferEntry {
+    string content = 1;
+    string role = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+// =======================================================
+// Extracted entity as first-class graph node (for HippoRAG PPR)
+
+
+message ExtractedEntity {
+    string id = 1;                      // UUID for graph node
+    string tenant_id = 2;
+    string memory_id = 3;               // Which memory it came from
+    string name = 4;
+    EntityType type = 5;
+    float confidence = 6;
+    repeated string aliases = 7;        
+    google.protobuf.Timestamp created_at = 8;
+}
+
+enum EntityType {
+    ENTITY_TYPE_UNSPECIFIED = 0;
+    ENTITY_TYPE_PERSON = 1;
+    ENTITY_TYPE_ORGANIZATION = 2;
+    ENTITY_TYPE_LOCATION = 3;
+    ENTITY_TYPE_CONCEPT = 4;
+    ENTITY_TYPE_EVENT = 5;
+    ENTITY_TYPE_PRODUCT = 6;
+}
+
+// Entity-to-entity relationship (HippoRAG core)
+// e.g. "John works at X Company" → John --works_at--> X Company
+message EntityRelation {
+    string id = 1;
+    string tenant_id = 2;
+    string source_entity_id = 3;        // Subject entity
+    string target_entity_id = 4;        // Object entity
+    string predicate = 5;               // "works_at", "knows", "located_in"
+    string memory_id = 6;               // Which memory this relation came from
+    float weight = 7;                   // Strength/confidence
+    google.protobuf.Timestamp created_at = 8;
+}

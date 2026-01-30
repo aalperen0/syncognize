@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -124,21 +123,47 @@ type SecurityConfig struct {
 	RateLimitBurst int           `mapstructure:"rate_limit_burst"`
 }
 
-// DSN returns postgres connection string
-// func (d DatabaseConfig) DSN() string {
-// 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
-// 		d.User, d.Password, d.Host, d.Port, d.Database, d.SSLMode)
-// }
-
 // Load reads config from env vars (SYNCOGNIZE_ prefix) and optional config file
 func Load() (*Config, error) {
+	// Debug: show current working directory
+	wd, _ := os.Getwd()
+	fmt.Printf("Current working directory: %s\n", wd)
+
+	// Load .env file - try multiple paths
+	err := godotenv.Load()
+	if err != nil {
+		// Try loading from project root
+		err = godotenv.Load("./.env")
+		if err != nil {
+			fmt.Printf("Warning: .env file not loaded: %v\n", err)
+		} else {
+			fmt.Println(".env file loaded successfully from ../../.env")
+		}
+	} else {
+		fmt.Println(".env file loaded successfully")
+	}
+
+	// Debug: check raw env vars
+	fmt.Printf("Raw env - Host: %s, Port: %s, User: %s\n",
+		os.Getenv("SYNCOGNIZE_DATABASE_HOST"),
+		os.Getenv("SYNCOGNIZE_DATABASE_PORT"),
+		os.Getenv("SYNCOGNIZE_DATABASE_USER"))
+
 	v := viper.New()
 
-	setDefaults(v)
-
+	// Set up env var binding
 	v.SetEnvPrefix("SYNCOGNIZE")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
+
+	// Bind all environment variables explicitly
+	bindEnvVars(v)
+
+	// Debug: print what viper sees
+	fmt.Printf("Viper sees - Host: %s, Port: %d, User: %s\n",
+		v.GetString("database.host"),
+		v.GetInt("database.port"),
+		v.GetString("database.user"))
 
 	// Optional config file
 	v.SetConfigName("config")
@@ -161,6 +186,93 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
+func bindEnvVars(v *viper.Viper) {
+	// Service
+	v.BindEnv("service.name")
+	v.BindEnv("service.environment")
+	v.BindEnv("service.version")
+
+	// gRPC
+	v.BindEnv("grpc.port")
+	v.BindEnv("grpc.max_recv_msg_size")
+	v.BindEnv("grpc.max_send_msg_size")
+	v.BindEnv("grpc.connection_timeout")
+
+	// REST
+	v.BindEnv("rest.port")
+	v.BindEnv("rest.read_timeout")
+	v.BindEnv("rest.write_timeout")
+	v.BindEnv("rest.cors_origins")
+
+	// MCP
+	v.BindEnv("mcp.enabled")
+	v.BindEnv("mcp.transport")
+	v.BindEnv("mcp.sse_port")
+
+	// Database
+	v.BindEnv("database.host")
+	v.BindEnv("database.port")
+	v.BindEnv("database.user")
+	v.BindEnv("database.password")
+	v.BindEnv("database.database")
+	v.BindEnv("database.ssl_mode")
+	v.BindEnv("database.max_open_conns")
+	v.BindEnv("database.max_idle_conns")
+	v.BindEnv("database.conn_max_lifetime")
+
+	// NATS
+	v.BindEnv("nats.url")
+	v.BindEnv("nats.enable_jetstream")
+	v.BindEnv("nats.max_reconnect")
+	v.BindEnv("nats.reconnect_wait")
+	v.BindEnv("nats.stream_prefix")
+	v.BindEnv("nats.stream_replicas")
+	v.BindEnv("nats.max_deliver")
+	v.BindEnv("nats.ack_wait")
+
+	// Voyage
+	v.BindEnv("voyage.api_key")
+	v.BindEnv("voyage.model")
+	v.BindEnv("voyage.dimensions")
+	v.BindEnv("voyage.batch_size")
+	v.BindEnv("voyage.timeout")
+	v.BindEnv("voyage.base_url")
+
+	// Gemini
+	v.BindEnv("gemini.api_key")
+	v.BindEnv("gemini.model")
+	v.BindEnv("gemini.max_tokens")
+	v.BindEnv("gemini.temperature")
+	v.BindEnv("gemini.timeout")
+
+	// Buffer
+	v.BindEnv("buffer.time_threshold")
+	v.BindEnv("buffer.token_threshold")
+	v.BindEnv("buffer.flush_interval")
+
+	// Search
+	v.BindEnv("search.default_limit")
+	v.BindEnv("search.max_limit")
+	v.BindEnv("search.semantic_weight")
+	v.BindEnv("search.keyword_weight")
+	v.BindEnv("search.min_score")
+	v.BindEnv("search.rrf_constant")
+	v.BindEnv("search.ppr_damping")
+	v.BindEnv("search.ppr_max_iter")
+
+	// Security
+	v.BindEnv("security.jwt_secret")
+	v.BindEnv("security.jwt_expiry")
+	v.BindEnv("security.encryption_key")
+	v.BindEnv("security.rate_limit_rps")
+	v.BindEnv("security.rate_limit_burst")
+
+	// Logging
+	v.BindEnv("logging.level")
+	v.BindEnv("logging.development")
+	v.BindEnv("logging.encoding")
+}
+
 func (c *Config) NewLogger() (*zap.Logger, error) {
 	var cfg zap.Config
 	if c.Logging.Development {
@@ -173,6 +285,12 @@ func (c *Config) NewLogger() (*zap.Logger, error) {
 		cfg.Encoding = c.Logging.Encoding
 	}
 
+	levelStr := c.Logging.Level
+
+	if levelStr == "" {
+		levelStr = "info"
+	}
+
 	level, err := zap.ParseAtomicLevel(c.Logging.Level)
 	if err != nil {
 		return nil, fmt.Errorf("parsing log level: %w", err)
@@ -180,127 +298,4 @@ func (c *Config) NewLogger() (*zap.Logger, error) {
 	cfg.Level = level
 
 	return cfg.Build()
-}
-
-func setDefaults(v *viper.Viper) {
-
-	if err := godotenv.Load(); err != nil {
-		zap.L().Info("No .env files found, using environment variables")
-	}
-
-	getEnv := func(key string) string {
-		return os.Getenv(key)
-	}
-
-	getEnvInt := func(key string) int {
-		if val := os.Getenv(key); val != "" {
-			if i, err := strconv.Atoi(val); err == nil {
-				return i
-			}
-		}
-		return 0
-	}
-
-	getEnvBool := func(key string) bool {
-		if val := os.Getenv(key); val != "" {
-			if b, err := strconv.ParseBool(val); err == nil {
-				return b
-			}
-		}
-		return false
-	}
-
-	getEnvFloat := func(key string) float32 {
-		if val := os.Getenv(key); val != "" {
-			if f, err := strconv.ParseFloat(val, 32); err == nil {
-				return float32(f)
-			}
-		}
-		return 0
-	}
-
-	// Service
-	v.SetDefault("service.name", getEnv("SYNCOGNIZE_SERVICE_NAME"))
-	v.SetDefault("service.environment", getEnv("SYNCOGNIZE_SERVICE_ENVIRONMENT"))
-	v.SetDefault("service.version", getEnv("SYNCOGNIZE_SERVICE_VERSION"))
-
-	// gRPC
-	v.SetDefault("grpc.port", getEnvInt("SYNCOGNIZE_GRPC_PORT"))
-	v.SetDefault("grpc.max_recv_msg_size", getEnvInt("SYNCOGNIZE_GRPC_MAX_RECV_MSG_SIZE"))
-	v.SetDefault("grpc.max_send_msg_size", getEnvInt("SYNCOGNIZE_GRPC_MAX_SEND_MSG_SIZE"))
-	v.SetDefault("grpc.connection_timeout", getEnv("SYNCOGNIZE_GRPC_CONNECTION_TIMEOUT"))
-
-	// REST
-	v.SetDefault("rest.port", getEnvInt("SYNCOGNIZE_REST_PORT"))
-	v.SetDefault("rest.read_timeout", getEnv("SYNCOGNIZE_REST_READ_TIMEOUT"))
-	v.SetDefault("rest.write_timeout", getEnv("SYNCOGNIZE_REST_WRITE_TIMEOUT"))
-	v.SetDefault("rest.cors_origins", strings.Split(getEnv("SYNCOGNIZE_REST_CORS_ORIGINS"), ","))
-
-	// MCP
-	v.SetDefault("mcp.enabled", getEnvBool("SYNCOGNIZE_MCP_ENABLED"))
-	v.SetDefault("mcp.transport", getEnv("SYNCOGNIZE_MCP_TRANSPORT"))
-	v.SetDefault("mcp.sse_port", getEnvInt("SYNCOGNIZE_MCP_SSE_PORT"))
-
-	// Database
-	v.SetDefault("database.host", getEnv("SYNCOGNIZE_DATABASE_HOST"))
-	v.SetDefault("database.port", getEnvInt("SYNCOGNIZE_DATABASE_PORT"))
-	v.SetDefault("database.user", getEnv("SYNCOGNIZE_DATABASE_USER"))
-	v.SetDefault("database.password", getEnv("SYNCOGNIZE_DATABASE_PASSWORD"))
-	v.SetDefault("database.database", getEnv("SYNCOGNIZE_DATABASE_NAME"))
-	v.SetDefault("database.ssl_mode", getEnv("SYNCOGNIZE_DATABASE_SSL_MODE"))
-	v.SetDefault("database.max_open_conns", getEnvInt("SYNCOGNIZE_DATABASE_MAX_OPEN_CONNS"))
-	v.SetDefault("database.max_idle_conns", getEnvInt("SYNCOGNIZE_DATABASE_MAX_IDLE_CONNS"))
-	v.SetDefault("database.conn_max_lifetime", getEnv("SYNCOGNIZE_DATABASE_CONN_MAX_LIFETIME"))
-
-	// NATS
-	v.SetDefault("nats.url", getEnv("SYNCOGNIZE_NATS_URL"))
-	v.SetDefault("nats.enable_jetstream", getEnvBool("SYNCOGNIZE_NATS_ENABLE_JETSTREAM"))
-	v.SetDefault("nats.max_reconnect", getEnvInt("SYNCOGNIZE_NATS_MAX_RECONNECT"))
-	v.SetDefault("nats.reconnect_wait", getEnv("SYNCOGNIZE_NATS_RECONNECT_WAIT"))
-	v.SetDefault("nats.stream_prefix", getEnv("SYNCOGNIZE_NATS_STREAM_PREFIX"))
-	v.SetDefault("nats.stream_replicas", getEnvInt("SYNCOGNIZE_NATS_STREAM_REPLICAS"))
-	v.SetDefault("nats.max_deliver", getEnvInt("SYNCOGNIZE_NATS_MAX_DELIVER"))
-	v.SetDefault("nats.ack_wait", getEnv("SYNCOGNIZE_NATS_ACK_WAIT"))
-
-	// Voyage AI
-	v.SetDefault("voyage.api_key", getEnv("SYNCOGNIZE_VOYAGE_API_KEY"))
-	v.SetDefault("voyage.model", getEnv("SYNCOGNIZE_VOYAGE_MODEL"))
-	v.SetDefault("voyage.dimensions", getEnvInt("SYNCOGNIZE_VOYAGE_DIMENSIONS"))
-	v.SetDefault("voyage.batch_size", getEnvInt("SYNCOGNIZE_VOYAGE_BATCH_SIZE"))
-	v.SetDefault("voyage.timeout", getEnv("SYNCOGNIZE_VOYAGE_TIMEOUT"))
-	v.SetDefault("voyage.base_url", getEnv("SYNCOGNIZE_VOYAGE_BASE_URL"))
-
-	// Gemini
-	v.SetDefault("gemini.api_key", getEnv("SYNCOGNIZE_GEMINI_API_KEY"))
-	v.SetDefault("gemini.model", getEnv("SYNCOGNIZE_GEMINI_MODEL"))
-	v.SetDefault("gemini.max_tokens", getEnvInt("SYNCOGNIZE_GEMINI_MAX_TOKENS"))
-	v.SetDefault("gemini.temperature", getEnvFloat("SYNCOGNIZE_GEMINI_TEMPERATURE"))
-	v.SetDefault("gemini.timeout", getEnv("SYNCOGNIZE_GEMINI_TIMEOUT"))
-
-	// Buffer
-	v.SetDefault("buffer.time_threshold", getEnv("SYNCOGNIZE_BUFFER_TIME_THRESHOLD"))
-	v.SetDefault("buffer.token_threshold", getEnvInt("SYNCOGNIZE_BUFFER_TOKEN_THRESHOLD"))
-	v.SetDefault("buffer.flush_interval", getEnv("SYNCOGNIZE_BUFFER_FLUSH_INTERVAL"))
-
-	// Search
-	v.SetDefault("search.default_limit", getEnvInt("SYNCOGNIZE_SEARCH_DEFAULT_LIMIT"))
-	v.SetDefault("search.max_limit", getEnvInt("SYNCOGNIZE_SEARCH_MAX_LIMIT"))
-	v.SetDefault("search.semantic_weight", getEnvFloat("SYNCOGNIZE_SEARCH_SEMANTIC_WEIGHT"))
-	v.SetDefault("search.keyword_weight", getEnvFloat("SYNCOGNIZE_SEARCH_KEYWORD_WEIGHT"))
-	v.SetDefault("search.min_score", getEnvFloat("SYNCOGNIZE_SEARCH_MIN_SCORE"))
-	v.SetDefault("search.rrf_constant", getEnvInt("SYNCOGNIZE_SEARCH_RRF_CONSTANT"))
-	v.SetDefault("search.ppr_damping", getEnvFloat("SYNCOGNIZE_SEARCH_PPR_DAMPING"))
-	v.SetDefault("search.ppr_max_iter", getEnvInt("SYNCOGNIZE_SEARCH_PPR_MAX_ITER"))
-
-	// Security
-	v.SetDefault("security.jwt_secret", getEnv("SYNCOGNIZE_SECURITY_JWT_SECRET"))
-	v.SetDefault("security.jwt_expiry", getEnv("SYNCOGNIZE_SECURITY_JWT_EXPIRY"))
-	v.SetDefault("security.encryption_key", getEnv("SYNCOGNIZE_SECURITY_ENCRYPTION_KEY"))
-	v.SetDefault("security.rate_limit_rps", getEnvInt("SYNCOGNIZE_SECURITY_RATE_LIMIT_RPS"))
-	v.SetDefault("security.rate_limit_burst", getEnvInt("SYNCOGNIZE_SECURITY_RATE_LIMIT_BURST"))
-
-	// Logging
-	v.SetDefault("logging.level", getEnv("SYNCOGNIZE_LOGGING_LEVEL"))
-	v.SetDefault("logging.development", getEnvBool("SYNCOGNIZE_LOGGING_DEVELOPMENT"))
-	v.SetDefault("logging.encoding", getEnv("SYNCOGNIZE_LOGGING_ENCODING"))
 }

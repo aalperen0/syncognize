@@ -20,7 +20,7 @@ func NewPostgres(ctx context.Context, cfg config.DatabaseConfig, logger *zap.Log
 		cfg.Database,
 	)
 
-	fmt.Println("DSN", dsn)
+	// fmt.Println("DSN", dsn)
 
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
@@ -44,10 +44,7 @@ func NewPostgres(ctx context.Context, cfg config.DatabaseConfig, logger *zap.Log
 		return nil, err
 	}
 
-	logger.Info("postgres connected",
-		zap.String("host", cfg.Host),
-		zap.String("database", cfg.Database),
-	)
+	logger.Info("postgres connected")
 
 	return db, nil
 }

@@ -45,6 +45,7 @@ message Edge {
     EdgeType type = 5;
     float weight = 6;
     google.protobuf.Struct metadata = 7;
+    google.protobuf.Timestamp created_at = 8;
 }
 
 enum EdgeType{

@@ -2,11 +2,9 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -125,29 +123,6 @@ type SecurityConfig struct {
 
 // Load reads config from env vars (SYNCOGNIZE_ prefix) and optional config file
 func Load() (*Config, error) {
-	// Debug: show current working directory
-	wd, _ := os.Getwd()
-	fmt.Printf("Current working directory: %s\n", wd)
-
-	// Load .env file - try multiple paths
-	err := godotenv.Load()
-	if err != nil {
-		// Try loading from project root
-		err = godotenv.Load("./.env")
-		if err != nil {
-			fmt.Printf("Warning: .env file not loaded: %v\n", err)
-		} else {
-			fmt.Println(".env file loaded successfully from ../../.env")
-		}
-	} else {
-		fmt.Println(".env file loaded successfully")
-	}
-
-	// Debug: check raw env vars
-	fmt.Printf("Raw env - Host: %s, Port: %s, User: %s\n",
-		os.Getenv("SYNCOGNIZE_DATABASE_HOST"),
-		os.Getenv("SYNCOGNIZE_DATABASE_PORT"),
-		os.Getenv("SYNCOGNIZE_DATABASE_USER"))
 
 	v := viper.New()
 
@@ -158,12 +133,6 @@ func Load() (*Config, error) {
 
 	// Bind all environment variables explicitly
 	bindEnvVars(v)
-
-	// Debug: print what viper sees
-	fmt.Printf("Viper sees - Host: %s, Port: %d, User: %s\n",
-		v.GetString("database.host"),
-		v.GetInt("database.port"),
-		v.GetString("database.user"))
 
 	// Optional config file
 	v.SetConfigName("config")

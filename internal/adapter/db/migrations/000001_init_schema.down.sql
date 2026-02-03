@@ -1,12 +1,13 @@
 -- Drop triggers
-DROP TRIGGER IF EXISTS memories_search_vector ON memories;
-DROP TRIGGER IF EXISTS tenants_updated_at ON tenants;
-DROP TRIGGER IF EXISTS users_updated_at ON users;
+DROP TRIGGER IF EXISTS memories_search_vector ON init.memories;
+DROP TRIGGER IF EXISTS tenants_updated_at ON init.tenants;
+DROP TRIGGER IF EXISTS users_updated_at ON init.users;
 
 -- Drop tables (reverse dependency order)
-DROP TABLE IF EXISTS memories CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS tenants CASCADE;
+DROP TABLE IF EXISTS init.memories CASCADE;
+DROP TABLE IF EXISTS init.users CASCADE;
+DROP TABLE IF EXISTS init.tenants CASCADE;
+DROP TABLE IF EXISTS auth.api_keys CASCADE;
 
 -- Drop functions
 DROP FUNCTION IF EXISTS update_memory_search_vector();
@@ -16,4 +17,8 @@ DROP FUNCTION IF EXISTS update_updated_at();
 DROP EXTENSION IF EXISTS unaccent;
 DROP EXTENSION IF EXISTS pg_trgm;
 DROP EXTENSION IF EXISTS vector;
-DROP EXTENSION IF EXISTS "uuid-ossp";
+DROP EXTENSION IF EXISTS citext;
+
+
+DROP SCHEMA IF EXISTS init CASCADE;
+DROP SCHEMA IF EXISTS auth CASCADE;

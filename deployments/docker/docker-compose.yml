@@ -1,0 +1,52 @@
+  services:
+    postgres:
+      image: supabase/postgres:15.6.1.143
+      container_name: syncognize-postgres
+      ports:
+        - "5432:5432"
+      environment:
+        POSTGRES_USER: syncognize
+        POSTGRES_PASSWORD: syncognize
+        POSTGRES_DB: syncognize
+      volumes:
+       - pgdata:/var/lib/postgresql/data
+      healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U syncognize"]
+       interval: 5s
+       timeout: 3s
+       retries: 5
+
+    nats:
+     image: nats:2.10-alpine
+     container_name: syncognize-nats
+     ports:
+       - "4222:4222"   # client
+       - "8222:8222"   # monitoring
+     command: ["--jetstream", "--store_dir","/data", "-m", "8222"]
+     volumes:
+       - natsdata:/data
+     healthcheck:
+       test: ["CMD", "nats-server", "--signal", "ldm"]
+       interval: 5s
+       timeout: 3s
+       retries: 5
+
+    redis:
+     image: redis:7-alpine
+     container_name: syncognize-redis
+     ports:
+       - "6379:6379"
+     command: ["redis-server", "--appendonly", "yes"]
+     volumes:
+       - redisdata:/data
+     healthcheck:
+       test: ["CMD", "redis-cli", "ping"]
+       interval: 5s
+       timeout: 3s
+       retries: 5
+
+
+  volumes:
+     pgdata:
+     natsdata:
+     redisdata:

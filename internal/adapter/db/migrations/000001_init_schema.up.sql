@@ -52,10 +52,10 @@ CREATE INDEX idx_users_email ON init.users(email);
 
 
 -- ==================================================================
--- MEMORIES
+-- memory
 -- ==================================================================
 
-CREATE TABLE init.memories(
+CREATE TABLE init.memory(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES init.tenants(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES init.users(id) ON DELETE CASCADE,
@@ -64,31 +64,35 @@ CREATE TABLE init.memories(
     type TEXT NOT NULL,
     content TEXT NOT NULL,
     content_hash TEXT NOT NULL,
+    decay_rate REAL DEFAULT 0.01,
+    access_count INTEGER DEFAULT 0,
+    deleted_by UUID REFERENCES init.users(id) ON DELETE SET NULL,
     embedding vector(512),
     importance REAL DEFAULT 0.5,
     embedding_model TEXT DEFAULT 'voyage-4-lite',
     metadata JSONB default '{}',
     search_vector tsvector,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    last_accessed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    last_accessed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ
 );
 
 -- ================= INDEXES ================= 
 
 
 
-CREATE INDEX idx_memories_tenant_id ON init.memories(tenant_id);
-CREATE INDEX idx_memories_user_id ON init.memories(user_id);
-CREATE INDEX idx_memories_source ON init.memories(source);
-CREATE INDEX idx_memories_context_id ON init.memories(context_id);
-CREATE INDEX idx_memories_type ON init.memories(type);
-CREATE INDEX idx_memories_content_hash ON init.memories(content_hash);
+CREATE INDEX idx_memory_tenant_id ON init.memory(tenant_id);
+CREATE INDEX idx_memory_user_id ON init.memory(user_id);
+CREATE INDEX idx_memory_source ON init.memory(source);
+CREATE INDEX idx_memory_context_id ON init.memory(context_id);
+CREATE INDEX idx_memory_type ON init.memory(type);
+CREATE INDEX idx_memory_content_hash ON init.memory(content_hash);
 
-CREATE INDEX idx_memories__embedding ON init.memories
+CREATE INDEX idx_memory_embedding ON init.memory
 USING hnsw (embedding vector_cosine_ops)
 WITH (m=16, ef_construction=64);
 
-CREATE INDEX idx_memories_search_vector ON init.memories USING gin(search_vector);
+CREATE INDEX idx_memory_search_vector ON init.memory USING gin(search_vector);
 
 
 
@@ -143,7 +147,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 
 
--- Auto-generate search_vector for memories
+-- Auto-generate search_vector for memory
 CREATE OR REPLACE FUNCTION update_memory_search_vector()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -152,6 +156,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
  
-CREATE TRIGGER memories_search_vector
-BEFORE INSERT OR UPDATE OF content ON init.memories
+CREATE TRIGGER memory_search_vector
+BEFORE INSERT OR UPDATE OF content ON init.memory
 FOR EACH ROW EXECUTE FUNCTION update_memory_search_vector();

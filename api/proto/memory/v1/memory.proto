@@ -14,12 +14,16 @@ message Memory{
     MemoryType type = 6;
     string content = 7;
     string content_hash = 8;
-    repeated float embedding = 9;
-    float importance = 10;
-    string embedding_model = 11; // later if switch different embedding model.
-    google.protobuf.Struct metadata = 12;
-    google.protobuf.Timestamp created_at = 13;
-    google.protobuf.Timestamp last_accessed_at = 14;
+    float decay_rate = 9;
+    int32 access_count = 10;
+    string deleted_by = 11;
+    repeated float embedding = 12;
+    float importance = 13;
+    string embedding_model = 14; // later if switch different embedding model.
+    google.protobuf.Struct metadata = 15;
+    google.protobuf.Timestamp created_at = 16;
+    google.protobuf.Timestamp last_accessed_at = 17;
+    google.protobuf.Timestamp deleted_at = 18;
 
 }
 

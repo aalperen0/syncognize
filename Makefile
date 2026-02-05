@@ -1,3 +1,5 @@
+include .env
+
 .PHONY: all build clean proto lint test run-gateway run-ingestion run-query run-extraction migrate-up migrate-down docker-build docker-up docker-down
 
 # Go parameters
@@ -78,16 +80,15 @@ lint:
 
 # Database migrations
 MIGRATE_CMD=migrate
-DB_URL ?= postgres://syncognize:syncognize@localhost:5432/syncognize?sslmode=disable
 
 migrate-up:
-	$(MIGRATE_CMD) -path internal/adapter/postgres/migrations -database "$(DB_URL)" up
+	$(MIGRATE_CMD) -path internal/adapter/db/migrations -database "$(SYNCOGNIZE_DATABASE_URL)" up
 
 migrate-down:
-	$(MIGRATE_CMD) -path internal/adapter/postgres/migrations -database "$(DB_URL)" down
+	$(MIGRATE_CMD) -path internal/adapter/db/migrations -database "$(SYNCOGNIZE_DATABASE_URL)" down
 
 migrate-create:
-	$(MIGRATE_CMD) create -ext sql -dir internal/adapter/postgres/migrations -seq $(name)
+	$(MIGRATE_CMD) create -ext sql -dir internal/adapter/db/migrations -seq $(name)
 
 # Docker
 docker-build:

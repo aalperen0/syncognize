@@ -31,8 +31,8 @@ CREATE INDEX idx_buffers_flush_at ON ops.buffers(flush_at);
 CREATE TABLE ops.ingestion_jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES init.tenants(id) ON DELETE CASCADE,
-    memory_id UUID REFERENCES init.memories(id) ON DELETE SET NULL,
-    status TEXT NOT NULL CHECK(status IN ('pending', 'processing', 'completed', 'failed', 'retrying')),  -- pending, processing, completed, failed
+    memory_id UUID REFERENCES init.memory(id) ON DELETE SET NULL,
+    status TEXT NOT NULL CHECK(status IN ('pending', 'processing', 'completed', 'failed', 'retrying')),   -- pending, processing, completed, failed
     stage TEXT NOT NULL, -- chunking, embedding, dedup, storing, extracting
     error TEXT,
     metadata JSONB DEFAULT '{}',

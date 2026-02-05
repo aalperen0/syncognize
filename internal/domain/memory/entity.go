@@ -47,12 +47,16 @@ type Memory struct {
 	Type           MemoryType
 	Content        string
 	ContentHash    string
+	DecayRate      float32
+	AccessCount    int32
+	DeletedBy      *uuid.UUID
 	Embedding      []float32
 	Importance     float32
 	EmbeddingModel string
 	Metadata       map[string]interface{}
 	CreatedAt      time.Time
 	LastAccessedAt time.Time
+	DeletedAt      time.Time
 }
 
 // =======================================================
@@ -65,6 +69,7 @@ type Edge struct {
 	Type           EdgeType
 	Weight         float32
 	Metadata       map[string]interface{}
+	CreatedAt      time.Time
 }
 
 // =======================================================

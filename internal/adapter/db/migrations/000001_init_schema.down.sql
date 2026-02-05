@@ -1,10 +1,10 @@
 -- Drop triggers
-DROP TRIGGER IF EXISTS memories_search_vector ON init.memories;
+DROP TRIGGER IF EXISTS memories_search_vector ON init.memory;
 DROP TRIGGER IF EXISTS tenants_updated_at ON init.tenants;
 DROP TRIGGER IF EXISTS users_updated_at ON init.users;
 
 -- Drop tables (reverse dependency order)
-DROP TABLE IF EXISTS init.memories CASCADE;
+DROP TABLE IF EXISTS init.memory CASCADE;
 DROP TABLE IF EXISTS init.users CASCADE;
 DROP TABLE IF EXISTS init.tenants CASCADE;
 DROP TABLE IF EXISTS auth.api_keys CASCADE;

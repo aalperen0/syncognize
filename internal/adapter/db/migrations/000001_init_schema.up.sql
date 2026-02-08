@@ -5,7 +5,6 @@ CREATE EXTENSION IF NOT EXISTS citext;
 
 
 CREATE SCHEMA IF NOT EXISTS init;
-CREATE SCHEMA IF NOT EXISTS auth;
 
 -- ==================================================================
 -- TENANTS
@@ -97,10 +96,10 @@ CREATE INDEX idx_memory_search_vector ON init.memory USING gin(search_vector);
 
 
 -- ==================================================================
--- AUTH SCHEMA: API Keys
+-- API_KEY SCHEMA: API Keys
 -- ==================================================================
 
-CREATE TABLE auth.api_keys (
+CREATE TABLE init.api_keys (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES init.tenants(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -117,8 +116,8 @@ CREATE TABLE auth.api_keys (
 
 -- ================= INDEXES ================= 
 -- API Keys
-CREATE INDEX idx_api_keys_tenant_id ON auth.api_keys(tenant_id);
-CREATE INDEX idx_api_keys_key_prefix ON auth.api_keys(key_prefix);
+CREATE INDEX idx_api_keys_tenant_id ON init.api_keys(tenant_id);
+CREATE INDEX idx_api_keys_key_prefix ON init.api_keys(key_prefix);
 
 
 

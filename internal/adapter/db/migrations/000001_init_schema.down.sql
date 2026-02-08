@@ -7,7 +7,7 @@ DROP TRIGGER IF EXISTS users_updated_at ON init.users;
 DROP TABLE IF EXISTS init.memory CASCADE;
 DROP TABLE IF EXISTS init.users CASCADE;
 DROP TABLE IF EXISTS init.tenants CASCADE;
-DROP TABLE IF EXISTS auth.api_keys CASCADE;
+DROP TABLE IF EXISTS init.api_keys CASCADE;
 
 -- Drop functions
 DROP FUNCTION IF EXISTS update_memory_search_vector();
@@ -21,4 +21,3 @@ DROP EXTENSION IF EXISTS citext;
 
 
 DROP SCHEMA IF EXISTS init CASCADE;
-DROP SCHEMA IF EXISTS auth CASCADE;

@@ -1,0 +1,96 @@
+syntax = "proto3";
+package memory.v1;
+
+import "memory.proto";
+import "google/protobuf/struct.proto";
+
+
+service GatewayService {
+    rpc StoreMemory(StoreMemoryRequest) returns (StoreMemoryResponse);
+    rpc GetMemory(GetMemoryRequest) returns (GetMemoryResponse);
+    rpc DeleteMemory(DeleteMemoryRequest) returns (DeleteMemoryResponse);
+    rpc QueryMemories(QueryMemoriesRequest) returns (QueryMemoriesResponse);
+    rpc GetContext(GetContextRequest) returns (GetContextResponse);
+    rpc FlushBuffer(FlushBufferRequest) returns (FlushBufferResponse);
+}
+
+///////////////////////////////////////////////
+
+message StoreMemoryRequest {
+    string content = 1;
+    string source = 2;
+    MemoryType type = 3;
+    google.protobuf.Struct metadata = 4;
+}
+
+message StoreMemoryResponse{
+    string id = 1;
+}
+
+///////////////////////////////////////////////
+
+message GetMemoryRequest{
+    string id = 1;
+}
+
+message GetMemoryResponse{
+    Memory memory = 1;
+}
+
+///////////////////////////////////////////////
+
+message DeleteMemoryRequest{
+    string id = 1;
+}
+
+message DeleteMemoryResponse{}
+
+///////////////////////////////////////////////
+
+message GetContextRequest{
+    string tenant_id = 1;
+    string user_id = 2;
+    string query = 3;
+    string source = 4;
+    int32 max_tokens = 5;
+    repeated MemoryType type = 6;
+}
+
+message GetContextResponse{
+    repeated ScoredMemory memories = 1;
+    repeated Edge related_edges= 2;
+    int32 total_tokens = 3;
+}
+
+///////////////////////////////////////////////
+
+message QueryMemoriesRequest{
+    string query = 1; 
+    google.protobuf.Struct filters = 2;
+}
+
+
+message QueryMemoriesResponse{
+    repeated ScoredMemory memories = 1;
+    int32 total_tokens = 2;    
+}
+
+
+///////////////////////////////////////////////
+
+message FlushBufferRequest{
+    string user_id = 1;
+    string source = 2;
+    
+}
+
+message FlushBufferResponse{
+    int32 flushed_count = 1; 
+}
+
+
+message ScoredMemory{
+    Memory memory = 1;
+    float score = 2;
+    string match_source = 3;
+}

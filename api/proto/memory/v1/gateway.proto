@@ -5,6 +5,11 @@ import "memory.proto";
 import "google/protobuf/struct.proto";
 
 
+// =======================================================
+// Service RPCs
+// =======================================================
+
+
 service GatewayService {
     rpc StoreMemory(StoreMemoryRequest) returns (StoreMemoryResponse);
     rpc GetMemory(GetMemoryRequest) returns (GetMemoryResponse);

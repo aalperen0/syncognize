@@ -1,0 +1,131 @@
+syntax = "proto3";
+package memory.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "memory/v1/memory.proto";
+
+
+// =======================================================
+// Ingestion Service — NATS-driven pipeline
+// =======================================================
+
+service IngestionService {
+    // Full pipeline: classify → chunk → dedup → embed → store
+    // Triggered via NATS memory.ingest.raw
+    rpc Ingest(IngestRequest) returns (IngestResponse);
+
+    // Poll async job progress (ops.ingestion_jobs)
+    rpc GetJobStatus(GetJobStatusRequest) returns (GetJobStatusResponse);
+}
+
+
+// =======================================================
+
+message IngestRequest {
+    string tenant_id = 1;
+    string user_id = 2;
+    string source = 3;              // claude, chatgpt, gemini
+    string context_id = 4;          // conversation/buffer/import ID
+    string content = 5;             // raw flushed buffer content
+    MemoryType memory_type = 6;
+    google.protobuf.Struct metadata = 7;
+}
+
+message IngestResponse {
+    string job_id = 1;              // ops.ingestion_jobs.id
+    IngestionStatus status = 2;
+    repeated string memory_ids = 3; // one per stored chunk
+}
+
+message GetJobStatusRequest {
+    string job_id = 1;
+}
+
+message GetJobStatusResponse {
+    string job_id = 1;
+    IngestionStatus status = 2;
+    IngestionStage stage = 3;
+    string error = 4;
+    repeated string memory_ids = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp completed_at = 7;
+}
+
+
+// =======================================================
+// Internal messages — used within pipeline, NOT as RPCs
+// Chunking is handled by internal/pkg/chunking/
+// =======================================================
+
+// =======================================================
+
+
+// Output of the classifier + chunker
+message Chunk {
+    int32 index = 1;
+    string content = 2;
+    int32 start_offset = 3;
+    int32 end_offset = 4;
+    ContentType content_type = 5;   //  the classifier detected
+    string language = 6;            // for code chunks: "go", "python", etc
+    string scope = 7;               // for code: "package main > func HandleRequest"
+}
+
+// Passed to internal/pkg/chunking/ 
+
+message ChunkingConfig {
+    int32 max_tokens = 1;           
+    int32 overlap_tokens = 2;       
+    repeated string separators = 3;
+}
+
+// NATS memory.embed.request payload
+message EmbedRequest {
+    string job_id = 1;
+    string tenant_id = 2;
+    repeated Chunk chunks = 3;
+}
+
+// Voyage AI response mapped back
+message EmbedResult {
+    string job_id = 1;
+    repeated ChunkEmbedding embeddings = 2;
+}
+
+message ChunkEmbedding {
+    int32 chunk_index = 1;
+    repeated float embedding = 2;   // 512-dim from voyage-3-lite
+    string content_hash = 3;        // SHA256 
+    bool duplicate = 4;             
+}
+
+
+// =======================================================
+// Enums
+// =======================================================
+
+enum IngestionStatus {
+    INGESTION_STATUS_UNSPECIFIED = 0;
+    INGESTION_STATUS_PENDING = 1;
+    INGESTION_STATUS_PROCESSING = 2;
+    INGESTION_STATUS_COMPLETED = 3;
+    INGESTION_STATUS_FAILED = 4;
+    INGESTION_STATUS_RETRYING = 5;
+}
+
+enum IngestionStage {
+    INGESTION_STAGE_UNSPECIFIED = 0;
+    INGESTION_STAGE_CLASSIFYING = 1;
+    INGESTION_STAGE_CHUNKING = 2;
+    INGESTION_STAGE_DEDUP = 3;
+    INGESTION_STAGE_EMBEDDING = 4;
+    INGESTION_STAGE_STORING = 5;
+}
+
+enum ContentType {
+    CONTENT_TYPE_UNSPECIFIED = 0;
+    CONTENT_TYPE_TEXT = 1;
+    CONTENT_TYPE_CODE = 2;
+    CONTENT_TYPE_MIXED = 3;
+}

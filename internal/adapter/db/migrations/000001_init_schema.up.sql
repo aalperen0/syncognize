@@ -63,6 +63,9 @@ CREATE TABLE init.memory(
     type TEXT NOT NULL,
     content TEXT NOT NULL,
     content_hash TEXT NOT NULL,
+    content_type TEXT NOT NULL DEFAULT 'text', -- text, code, mixed
+    language TEXT DEFAULT '',                  -- for code: go, python, etc
+    scope TEXT DEFAULT '',                      
     decay_rate REAL DEFAULT 0.01,
     access_count INTEGER DEFAULT 0,
     deleted_by UUID REFERENCES init.users(id) ON DELETE SET NULL,
@@ -133,6 +136,7 @@ BEGIN
     RETURN NEW;
 END;    
 $$ LANGUAGE plpgsql;
+SET search_path = init, public;
 
 
 CREATE TRIGGER users_updated_at
@@ -154,6 +158,7 @@ BEGIN
      RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+SET search_path = init, public;
  
 CREATE TRIGGER memory_search_vector
 BEFORE INSERT OR UPDATE OF content ON init.memory

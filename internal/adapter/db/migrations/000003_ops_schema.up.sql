@@ -32,8 +32,8 @@ CREATE TABLE ops.ingestion_jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES init.tenants(id) ON DELETE CASCADE,
     memory_id UUID REFERENCES init.memory(id) ON DELETE SET NULL,
-    status TEXT NOT NULL CHECK(status IN ('pending', 'processing', 'completed', 'failed', 'retrying')),   -- pending, processing, completed, failed
-    stage TEXT NOT NULL, -- chunking, embedding, dedup, storing, extracting
+    status TEXT NOT NULL CHECK(status IN ('unspecified','pending', 'processing', 'completed', 'failed', 'retrying')),   -- pending, processing, completed, failed
+    stage TEXT NOT NULL CHECK(status IN ('unspecified', 'classifying', 'chunking', 'dedup', 'embedding', 'storing')), -- chunking, embedding, dedup, storing, extracting
     error TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

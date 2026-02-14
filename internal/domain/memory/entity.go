@@ -8,7 +8,7 @@ import (
 
 type MemoryType string
 type EdgeType string
-type EntityType string
+type ContentType string
 
 const (
 	MemoryTypeUnspecified  MemoryType = "unspecified"
@@ -27,13 +27,10 @@ const (
 )
 
 const (
-	EntityTypeUnspecified  EntityType = "unspecified"
-	EntityTypePerson       EntityType = "person"
-	EntityTypeOrganization EntityType = "organization"
-	EntityTypeLocation     EntityType = "location"
-	EntityTypeConcept      EntityType = "concept"
-	EntityTypeEvent        EntityType = "event"
-	EntityTypeProduct      EntityType = "product"
+	ContentTypeUnspecified ContentType = "unspecified"
+	ContentTypeText        ContentType = "text"
+	ContentTypeCode        ContentType = "code"
+	ContentTypeMixed       ContentType = "mixed"
 )
 
 // Represents a stored semantic memory
@@ -43,20 +40,29 @@ type Memory struct {
 	TenantID       uuid.UUID
 	UserID         uuid.UUID
 	Source         string
-	ContextId      string
+	ContextID      string
 	Type           MemoryType
 	Content        string
 	ContentHash    string
+	ContentType    ContentType // text, code, mixed
+	Language       string      // for code chunks: go, python, etc
+	Scope          string
 	DecayRate      float32
 	AccessCount    int32
 	DeletedBy      *uuid.UUID
 	Embedding      []float32
 	Importance     float32
 	EmbeddingModel string
-	Metadata       map[string]interface{}
+	Metadata       map[string]any
 	CreatedAt      time.Time
 	LastAccessedAt time.Time
-	DeletedAt      time.Time
+	DeletedAt      *time.Time
+}
+
+type ScoredMemory struct {
+	Memory      Memory
+	Score       float32
+	MatchSource string
 }
 
 // =======================================================
@@ -68,51 +74,6 @@ type Edge struct {
 	TargetMemoryID uuid.UUID
 	Type           EdgeType
 	Weight         float32
-	Metadata       map[string]interface{}
+	Metadata       map[string]any
 	CreatedAt      time.Time
-}
-
-// =======================================================
-// Represents a named entity extracted from memory
-type ExtractedEntity struct {
-	ID         uuid.UUID
-	TenantID   uuid.UUID
-	MemoryID   uuid.UUID
-	Name       string
-	Type       EntityType
-	Confidence float32
-	Aliases    []string
-	CreatedAt  time.Time
-}
-
-// =======================================================
-// Represents a relationship between two entities
-// "John works at X"
-type EntityRelation struct {
-	ID             uuid.UUID
-	TenantId       uuid.UUID
-	SourceEntityID uuid.UUID
-	TargetEntityID uuid.UUID
-	Predicate      string
-	MemoryID       uuid.UUID
-	Weight         float32
-	CreatedAt      time.Time
-}
-
-// =======================================================
-// Holds memories temporarily before batch processing
-type Buffer struct {
-	ID         uuid.UUID
-	TenantID   uuid.UUID
-	UserID     uuid.UUID
-	Source     string
-	Entries    []BufferEntry
-	TokenCount int
-	FlushAt    time.Time
-}
-
-type BufferEntry struct {
-	Content   string
-	Role      string
-	Timestamp time.Time
 }

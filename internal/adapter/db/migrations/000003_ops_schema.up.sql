@@ -13,7 +13,6 @@ CREATE TABLE ops.buffers (
     source TEXT NOT NULL,
     entries JSONB NOT NULL DEFAULT '[]', -- Array of {content, role, timestamp}
     token_count INTEGER DEFAULT 0,
-    word_count INTEGER DEFAULT 0,
     flush_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -33,7 +32,7 @@ CREATE TABLE ops.ingestion_jobs (
     tenant_id UUID NOT NULL REFERENCES init.tenants(id) ON DELETE CASCADE,
     memory_id UUID REFERENCES init.memory(id) ON DELETE SET NULL,
     status TEXT NOT NULL CHECK(status IN ('unspecified','pending', 'processing', 'completed', 'failed', 'retrying')),   -- pending, processing, completed, failed
-    stage TEXT NOT NULL CHECK(status IN ('unspecified', 'classifying', 'chunking', 'dedup', 'embedding', 'storing')), -- chunking, embedding, dedup, storing, extracting
+    stage TEXT NOT NULL CHECK(stage IN ('unspecified', 'classifying', 'chunking', 'dedup', 'embedding', 'storing')), -- chunking, embedding, dedup, storing, extracting
     error TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

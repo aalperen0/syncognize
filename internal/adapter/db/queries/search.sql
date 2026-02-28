@@ -4,7 +4,7 @@ SELECT id, tenant_id, user_id, source, context_id,
        language, scope, decay_rate, access_count,
        deleted_by, embedding, importance, embedding_model,
        metadata, created_at, last_accessed_at, deleted_at,
-       1 - (embedding <=> @embedding::vector) AS score
+       (1 - (embedding <=> @embedding::vector))::real AS score
 FROM init.memory
 WHERE tenant_id = @tenant_id
   AND deleted_at IS NULL

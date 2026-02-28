@@ -6,9 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type MemoryType string
-type EdgeType string
-type ContentType string
+type (
+	MemoryType  string
+	EdgeType    string
+	ContentType string
+)
 
 const (
 	MemoryTypeUnspecified  MemoryType = "unspecified"

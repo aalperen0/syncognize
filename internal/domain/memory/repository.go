@@ -16,5 +16,5 @@ type MemoryRepository interface {
 
 type EdgeRepository interface {
 	Link(ctx context.Context, edge *Edge) error
-	Neighbors(ctx context.Context, memoryID uuid.UUID) ([]Edge, error)
+	Neighbors(ctx context.Context, memoryID uuid.UUID, tenantID uuid.UUID) ([]Edge, error)
 }

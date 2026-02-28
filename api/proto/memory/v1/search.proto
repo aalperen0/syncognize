@@ -1,0 +1,68 @@
+syntax = "proto3";
+package memory.v1;
+
+import "google/protobuf/timestamp.proto";
+import "memory/v1/memory.proto";
+
+
+// =======================================================
+// Search Service — internal, called by Gateway
+// =======================================================
+
+service SearchService {
+    rpc SemanticSearch(SemanticSearchRequest) returns (SearchResponse);
+    rpc KeywordSearch(KeywordSearchRequest) returns (SearchResponse);
+    rpc HybridSearch(HybridSearchRequest) returns (SearchResponse);
+}
+
+
+// =======================================================
+// Requests
+// =======================================================
+
+message SemanticSearchRequest {
+    string tenant_id = 1;
+    string query = 2;               // raw text — service embeds via Voyage AI
+    int32 limit = 3;
+    SearchFilters filters = 4;
+}
+
+message KeywordSearchRequest {
+    string tenant_id = 1;
+    string query = 2;               // raw text — converted to tsquery internally
+    int32 limit = 3;
+    SearchFilters filters = 4;
+}
+
+message HybridSearchRequest {
+    string tenant_id = 1;
+    string query = 2;
+    int32 limit = 3;
+    SearchFilters filters = 4;
+    float semantic_weight = 5;      // default 0.5
+    float keyword_weight = 6;       // default 0.5
+    int32 rrf_constant = 7;         // default 60
+}
+
+
+// =======================================================
+// Shared response 
+// =======================================================
+
+message SearchResponse {
+    repeated ScoredMemory results = 1;
+    int32 total_matches = 2;
+}
+
+
+// =======================================================
+// Filters — shared across all search types
+// =======================================================
+
+message SearchFilters {
+    repeated MemoryType memory_types = 1;
+    repeated string sources = 2;
+    repeated ContentType content_types = 3;
+    optional google.protobuf.Timestamp start_date = 4;
+    optional google.protobuf.Timestamp end_date = 5;
+}

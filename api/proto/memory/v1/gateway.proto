@@ -1,12 +1,13 @@
 syntax = "proto3";
 package memory.v1;
 
-import "memory.proto";
+import "memory/v1/memory.proto";
+import "memory/v1/search.proto";
 import "google/protobuf/struct.proto";
 
 
 // =======================================================
-// Service RPCs
+// Gateway Service
 // =======================================================
 
 
@@ -53,12 +54,10 @@ message DeleteMemoryResponse{}
 ///////////////////////////////////////////////
 
 message GetContextRequest{
-    string tenant_id = 1;
-    string user_id = 2;
-    string query = 3;
-    string source = 4;
-    int32 max_tokens = 5;
-    repeated MemoryType type = 6;
+    string query = 1;
+    string source = 2;
+    int32 max_tokens = 3;
+    repeated MemoryType type = 4;
 }
 
 message GetContextResponse{
@@ -71,7 +70,7 @@ message GetContextResponse{
 
 message QueryMemoriesRequest{
     string query = 1; 
-    google.protobuf.Struct filters = 2;
+    SearchFilters filters = 2;
 }
 
 
@@ -94,8 +93,3 @@ message FlushBufferResponse{
 }
 
 
-message ScoredMemory{
-    Memory memory = 1;
-    float score = 2;
-    string match_source = 3;
-}

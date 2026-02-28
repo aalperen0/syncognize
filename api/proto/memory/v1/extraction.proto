@@ -1,0 +1,109 @@
+syntax = "proto3";
+package memory.v1;
+
+import "google/protobuf/timestamp.proto";
+import "memory/v1/memory.proto";
+
+
+// =======================================================
+// Extraction Service — NATS memory.extract.entity consumer
+// =======================================================
+
+service ExtractionService {
+    // Send memory content to Gemini for NER, returns entities + relations
+    rpc ExtractEntities(ExtractEntitiesRequest) returns (ExtractEntitiesResponse);
+
+    // Persist extracted entities + relations to graph schema
+    rpc StoreEntities(StoreEntitiesRequest) returns (StoreEntitiesResponse);
+
+    // Build memory-to-memory edges based on shared entities
+    rpc BuildEdges(BuildEdgesRequest) returns (BuildEdgesResponse);
+
+    // Poll extraction job status
+    rpc GetExtractionStatus(GetExtractionStatusRequest) returns (GetExtractionStatusResponse);
+}
+
+
+// =======================================================
+// ExtractEntities — Gemini NER
+// =======================================================
+
+message ExtractEntitiesRequest {
+    string tenant_id = 1;
+    string memory_id = 2;
+    string content = 3;
+    MemoryType memory_type = 4;
+    ContentType content_type = 5;   // from ingestion classifier, adjusts Gemini prompt
+}
+
+message ExtractEntitiesResponse {
+    repeated ExtractedEntity entities = 1;
+    repeated EntityRelation relations = 2;
+}
+
+
+// =======================================================
+// StoreEntities  
+// =======================================================
+
+message StoreEntitiesRequest {
+    string tenant_id = 1;
+    string memory_id = 2;
+    repeated ExtractedEntity entities = 3;
+    repeated EntityRelation relations = 4;
+}
+
+message StoreEntitiesResponse {
+    int32 entities_stored = 1;
+    int32 relations_stored = 2;
+    int32 entities_deduplicated = 3;   
+}
+
+
+// =======================================================
+// BuildEdges — create memory-to-memory edges via shared entities
+// e.g. Memory A mentions "John", Memory B mentions "John"
+//      → Edge(A → B, type=RELATED_TO, weight=shared_entity_count)
+// =======================================================
+
+message BuildEdgesRequest {
+    string tenant_id = 1;
+    string memory_id = 2;
+    repeated string entity_ids = 3;    // entities extracted from this memory
+}
+
+message BuildEdgesResponse {
+    repeated Edge edges_created = 1;    // memory-to-memory edges
+    int32 edges_count = 2;
+}
+
+
+// =======================================================
+// GetExtractionStatus
+// =======================================================
+
+message GetExtractionStatusRequest {
+    string job_id = 1;
+}
+
+message GetExtractionStatusResponse {
+    string job_id = 1;
+    ExtractionStatus status = 2;
+    string error = 3;
+    int32 entity_count = 4;
+    int32 relation_count = 5;
+    int32 edge_count = 6;
+}
+
+
+// =======================================================
+// Enums
+// =======================================================
+
+enum ExtractionStatus {
+    EXTRACTION_STATUS_UNSPECIFIED = 0;
+    EXTRACTION_STATUS_PENDING = 1;
+    EXTRACTION_STATUS_PROCESSING = 2;
+    EXTRACTION_STATUS_COMPLETED = 3;
+    EXTRACTION_STATUS_FAILED = 4;
+}

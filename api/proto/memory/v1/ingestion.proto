@@ -38,6 +38,9 @@ message IngestResponse {
     repeated string memory_ids = 3; // one per stored chunk
 }
 
+// =======================================================
+
+
 message GetJobStatusRequest {
     string job_id = 1;
 }
@@ -54,11 +57,9 @@ message GetJobStatusResponse {
 
 
 // =======================================================
-// Internal messages — used within pipeline, NOT as RPCs
 // Chunking is handled by internal/pkg/chunking/
 // =======================================================
 
-// =======================================================
 
 
 // Output of the classifier + chunker
@@ -69,7 +70,7 @@ message Chunk {
     int32 end_offset = 4;
     ContentType content_type = 5;   //  the classifier detected
     string language = 6;            // for code chunks: "go", "python", etc
-    string scope = 7;               // for code: "package main > func HandleRequest"
+    string scope = 7;               
 }
 
 // Passed to internal/pkg/chunking/ 
@@ -79,6 +80,9 @@ message ChunkingConfig {
     int32 overlap_tokens = 2;       
     repeated string separators = 3;
 }
+
+
+// =======================================================
 
 // NATS memory.embed.request payload
 message EmbedRequest {
@@ -95,7 +99,7 @@ message EmbedResult {
 
 message ChunkEmbedding {
     int32 chunk_index = 1;
-    repeated float embedding = 2;   // 512-dim from voyage-3-lite
+    repeated float embedding = 2;   // 512-dim
     string content_hash = 3;        // SHA256 
     bool duplicate = 4;             
 }
@@ -123,9 +127,3 @@ enum IngestionStage {
     INGESTION_STAGE_STORING = 5;
 }
 
-enum ContentType {
-    CONTENT_TYPE_UNSPECIFIED = 0;
-    CONTENT_TYPE_TEXT = 1;
-    CONTENT_TYPE_CODE = 2;
-    CONTENT_TYPE_MIXED = 3;
-}

@@ -14,16 +14,19 @@ message Memory{
     MemoryType type = 6;
     string content = 7;
     string content_hash = 8;
-    float decay_rate = 9;
-    int32 access_count = 10;
-    string deleted_by = 11;
-    repeated float embedding = 12;
-    float importance = 13;
-    string embedding_model = 14; // later if switch different embedding model.
-    google.protobuf.Struct metadata = 15;
-    google.protobuf.Timestamp created_at = 16;
-    google.protobuf.Timestamp last_accessed_at = 17;
-    google.protobuf.Timestamp deleted_at = 18;
+    ContentType content_type = 9;
+    string language = 10;
+    string scope = 11;
+    float decay_rate = 12;
+    int32 access_count = 13;
+    string deleted_by = 14;
+    repeated float embedding = 15;
+    float importance = 16;
+    string embedding_model = 17; // later if switch different embedding model.
+    google.protobuf.Struct metadata = 18;
+    google.protobuf.Timestamp created_at = 19;
+    google.protobuf.Timestamp last_accessed_at = 20;
+    google.protobuf.Timestamp deleted_at = 21;
 
 }
 
@@ -115,4 +118,18 @@ message EntityRelation {
     string memory_id = 6;               // Which memory this relation came from
     float weight = 7;                   // Strength/confidence
     google.protobuf.Timestamp created_at = 8;
+}
+
+
+message ScoredMemory{
+    Memory memory = 1;
+    float score = 2;
+    string match_source = 3;
+}
+
+enum ContentType {
+    CONTENT_TYPE_UNSPECIFIED = 0;
+    CONTENT_TYPE_TEXT = 1;
+    CONTENT_TYPE_CODE = 2;
+    CONTENT_TYPE_MIXED = 3;
 }

@@ -105,18 +105,6 @@ type InitUser struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
-type OpsBuffer struct {
-	ID         uuid.UUID          `json:"id"`
-	TenantID   uuid.UUID          `json:"tenant_id"`
-	UserID     uuid.UUID          `json:"user_id"`
-	Source     string             `json:"source"`
-	Entries    []byte             `json:"entries"`
-	TokenCount pgtype.Int4        `json:"token_count"`
-	FlushAt    pgtype.Timestamptz `json:"flush_at"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
-}
-
 type OpsIngestionJob struct {
 	ID          uuid.UUID          `json:"id"`
 	TenantID    uuid.UUID          `json:"tenant_id"`

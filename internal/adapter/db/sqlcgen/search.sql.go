@@ -143,7 +143,7 @@ SELECT id, tenant_id, user_id, source, context_id,
        language, scope, decay_rate, access_count,
        deleted_by, embedding, importance, embedding_model,
        metadata, created_at, last_accessed_at, deleted_at,
-       1 - (embedding <=> $1::vector) AS score
+       (1 - (embedding <=> $1::vector))::real AS score
 FROM init.memory
 WHERE tenant_id = $2
   AND deleted_at IS NULL
@@ -197,7 +197,7 @@ type SemanticSearchRow struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	LastAccessedAt pgtype.Timestamptz `json:"last_accessed_at"`
 	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
-	Score          int32              `json:"score"`
+	Score          float32            `json:"score"`
 }
 
 func (q *Queries) SemanticSearch(ctx context.Context, arg SemanticSearchParams) ([]SemanticSearchRow, error) {
